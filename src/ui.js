@@ -10,11 +10,12 @@ let colorEnabled = null; // null = auto-detect
 const plain = new Proxy({}, { get: () => (s) => String(s) });
 
 /**
- * Explicitly force colours on or off, overriding auto-detection.
- * @param {boolean} enabled
+ * Explicitly force colours on or off. Pass null to return to auto-detection,
+ * which is what enables NO_COLOR and non-TTY suppression to work at all.
+ * @param {boolean|null} enabled
  */
 export function setColorEnabled(enabled) {
-  colorEnabled = Boolean(enabled);
+  colorEnabled = enabled === null ? null : Boolean(enabled);
 }
 
 function autoColor() {

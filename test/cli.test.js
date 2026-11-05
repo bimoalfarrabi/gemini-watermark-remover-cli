@@ -184,6 +184,47 @@ test('an unsupported input exits 4', async () => {
     }
 });
 
+test('piped output carries no ANSI escapes', async () => {
+    const dir = await tempDir();
+    try {
+        const output = path.join(dir, 'out.png');
+        const { stdout, stderr } = await gwr([fixture('sample-1k.png'), '-o', output]);
+        assert.ok(!/\u001b\[/.test(stdout), `ANSI in stdout: ${JSON.stringify(stdout)}`);
+        assert.ok(!/\u001b\[/.test(stderr), `ANSI in stderr: ${JSON.stringify(stderr)}`);
+    } finally {
+        await rm(dir, { recursive: true, force: true });
+    }
+});
+
+test('NO_COLOR and --no-color both keep the output plain', async () => {
+    const dir = await tempDir();
+    try {
+        const output = path.join(dir, 'out.png');
+        const withEnv = await gwr([fixture('sample-1k.png'), '-o', output, '-f'], { env: { NO_COLOR: '1' } });
+        const withFlag = await gwr([fixture('sample-1k.png'), '-o', output, '-f', '--no-color']);
+        for (const run of [withEnv, withFlag]) {
+            assert.ok(!/\u001b\[/.test(run.stdout), 'expected plain stdout');
+            assert.ok(!/\u001b\[/.test(run.stderr), 'expected plain stderr');
+        }
+    } finally {
+        await rm(dir, { recursive: true, force: true });
+    }
+});
+
+test('a failure explains itself on stderr', async () => {
+    const dir = await tempDir();
+    try {
+        const input = path.join(dir, 'broken.png');
+        await writeFile(input, 'not an image');
+        const { code, stderr } = await gwr([input, '-o', path.join(dir, 'out.png')]);
+        assert.equal(code, 4);
+        assert.match(stderr, /error:/i);
+        assert.ok(stderr.trim().length > 10, `no explanation: ${JSON.stringify(stderr)}`);
+    } finally {
+        await rm(dir, { recursive: true, force: true });
+    }
+});
+
 test('doctor reports the codec and config location', async () => {
     const { code, stdout } = await gwr(['doctor']);
     assert.equal(code, 0);

@@ -114,7 +114,14 @@ export async function processImage(inputPath, options = {}) {
     const { imageData: cleaned, meta } = removeWatermarkFromImageDataSync(imageData);
     const encoded = await codec.encode(cleaned, { mimeType, filePath: output });
 
-    await mkdir(path.dirname(output), { recursive: true });
+    // Only create a directory when the output actually has one. dirname() of a
+    // bare filename is '.', and on Windows mkdir('.') fails with EEXIST instead
+    // of being a no-op like it is on POSIX — which made `photo.png` fail when
+    // run from its own folder.
+    const outputDir = path.dirname(output);
+    if (outputDir && outputDir !== '.') {
+      await mkdir(outputDir, { recursive: true });
+    }
     await writeFile(output, encoded);
 
     return {

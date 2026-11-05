@@ -111,5 +111,8 @@ export function describePlan(plan) {
  * @returns {Promise<void>}
  */
 export async function ensureParentDir(filePath) {
-  await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
+  const parent = path.dirname(filePath);
+  // Windows returns EEXIST for mkdir('.') while POSIX treats it as a no-op.
+  if (!parent || parent === '.') return;
+  await fs.promises.mkdir(parent, { recursive: true });
 }

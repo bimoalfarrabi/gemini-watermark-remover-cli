@@ -29,7 +29,11 @@ export async function main(argv = process.argv.slice(2)) {
     }
 
     const { command, options } = parsed;
-    ui.setColorEnabled(!options.noColor);
+    // Only an explicit --no-color forces colour off; otherwise leave it on
+    // auto-detect so piped output and NO_COLOR behave.
+    if (options.noColor) {
+        ui.setColorEnabled(false);
+    }
 
     if (command === 'help') {
         process.stdout.write(`${usageText()}\n\nVersion ${VERSION}\n`);

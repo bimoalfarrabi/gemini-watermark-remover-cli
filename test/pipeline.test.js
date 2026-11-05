@@ -65,6 +65,29 @@ test('processImage writes a cleaned file and reports engine metadata', async () 
     }
 });
 
+test('a bare filename output works from the current directory', async () => {
+    // Regression: dirname('out.png') is '.', and on Windows mkdir('.') throws
+    // EEXIST instead of being a no-op, so `tool photo.png` failed there while
+    // passing on POSIX.
+    const dir = await tempDir();
+    const previous = process.cwd();
+    const input = fixture('sample-1k.png');
+    try {
+        process.chdir(dir);
+        const result = await processImage(input, { output: 'bare.png' });
+        assert.equal(result.ok, true, result.error?.message);
+        assert.ok((await stat(path.join(dir, 'bare.png'))).size > 1000);
+    } finally {
+        process.chdir(previous);
+        await rm(dir, { recursive: true, force: true });
+    }
+});
+
+test('ensureParentDir tolerates the current directory', async () => {
+    const { ensureParentDir } = await import('../src/output.js');
+    await ensureParentDir('plain-name.png');
+});
+
 test('processImage refuses to clobber an existing file without overwrite', async () => {
     const dir = await tempDir();
     try {
