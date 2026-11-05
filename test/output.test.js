@@ -24,8 +24,10 @@ test('honours a custom suffix', () => {
 });
 
 test('explicit output wins over everything', () => {
+    // An explicit --output is passed through verbatim; it must never be
+    // renormalized, otherwise a user's exact path could be rewritten.
     const plan = planOutput('/s/photo.png', { output: '/out/custom.png', outDir: '/ignored' });
-    assert.equal(plan.output, path.normalize('/out/custom.png'));
+    assert.equal(plan.output, '/out/custom.png');
 });
 
 test('out-dir keeps the basename', () => {
@@ -34,8 +36,9 @@ test('out-dir keeps the basename', () => {
 });
 
 test('in-place points at the input and is flagged', () => {
-    const plan = planOutput('/s/photo.png', { inPlace: true, overwrite: true });
-    assert.equal(plan.output, path.normalize('/s/photo.png'));
+    const input = path.join('/s', 'photo.png');
+    const plan = planOutput(input, { inPlace: true, overwrite: true });
+    assert.equal(plan.output, input);
     assert.equal(plan.inPlace, true);
 });
 
