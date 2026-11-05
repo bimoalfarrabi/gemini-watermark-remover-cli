@@ -22,8 +22,7 @@
     "url": "https://github.com/bimoalfarrabi/gemini-watermark-remover-cli/issues"
   },
   "bin": {
-    "gemini-watermark": "./src/cli.js",
-    "gwr": "./src/cli.js"
+    "gemini-watermark": "./src/cli.js"
   },
   "exports": {
     ".": "./src/index.js"

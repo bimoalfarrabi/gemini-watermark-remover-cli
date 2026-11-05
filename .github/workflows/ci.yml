@@ -60,7 +60,11 @@ jobs:
           mkdir -p "$RUNNER_TEMP/probe" && cd "$RUNNER_TEMP/probe"
           npm init -y >/dev/null
           npm install "$RUNNER_TEMP"/*.tgz --no-audit --no-fund
-          ./node_modules/.bin/gwr --version
+          # The dependency ships its own `gwr` bin, so only the unambiguous
+          # name is ours. Asserting `gwr` here would silently test upstream.
+          ./node_modules/.bin/gemini-watermark --version
+          test ! -e ./node_modules/.bin/gemini-watermark.bak
+          ./node_modules/.bin/gemini-watermark --help | grep -q "gemini watermark"
 
   binaries:
     name: standalone binaries

@@ -21,10 +21,16 @@ Or run it once without installing:
 npx gemini-watermark-remover-cli photo.png
 ```
 
-This installs two command names, `gemini-watermark` and `gwr`. The short `gwr`
-alias is also used by the engine package this CLI depends on, so if you have
-both installed globally the last one wins — use `gemini-watermark` when you
-need to be unambiguous.
+The npm package installs one command, `gemini-watermark`. It deliberately does
+not claim the short name `gwr`, because the engine package this CLI depends on
+([`@pilio/gemini-watermark-remover`](https://www.npmjs.com/package/@pilio/gemini-watermark-remover))
+ships its own `gwr` binary; two packages claiming one bin name resolve to
+whichever installed last. The standalone binaries below are called `gwr`, and
+you can add a shell alias if you want the short form:
+
+```bash
+alias gwr=gemini-watermark
+```
 
 Prebuilt standalone binaries (no Node.js required) are attached to each
 release: `gwr-linux-x64`, `gwr-linux-arm64`, `gwr-macos-x64`,

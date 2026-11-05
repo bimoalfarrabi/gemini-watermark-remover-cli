@@ -75,7 +75,7 @@ jobs:
         shell: bash
         run: |
           tag="${GITHUB_REF_NAME#v}"
-          pkg="$(node -p "require('./package.json').version")"
+          pkg="$(node -p "JSON.parse(require('fs').readFileSync('package.json','utf8')).version")"
           if [ "$tag" != "$pkg" ]; then
             echo "tag $tag does not match package.json $pkg" >&2
             exit 1

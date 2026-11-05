@@ -25,10 +25,13 @@ function step(name, fn) {
 }
 
 step('bin entry exists', () => {
-    const entry = path.join(root, pkg.bin.gwr);
-    readFileSync(entry);
-    const first = readFileSync(entry, 'utf8').split('\n')[0];
-    if (!first.startsWith('#!')) throw new Error('bin entry is missing a shebang');
+    const names = Object.keys(pkg.bin ?? {});
+    if (names.length === 0) throw new Error('package.json declares no bin');
+    for (const name of names) {
+        const entry = path.join(root, pkg.bin[name]);
+        const first = readFileSync(entry, 'utf8').split('\n')[0];
+        if (!first.startsWith('#!')) throw new Error(`${name} entry is missing a shebang`);
+    }
 });
 
 step('all declared deps resolve', () => {
