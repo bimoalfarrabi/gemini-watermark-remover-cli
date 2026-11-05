@@ -13,6 +13,14 @@
     "nano-banana",
     "ai-image"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bimoalfarrabi/gemini-watermark-remover-cli.git"
+  },
+  "homepage": "https://github.com/bimoalfarrabi/gemini-watermark-remover-cli#readme",
+  "bugs": {
+    "url": "https://github.com/bimoalfarrabi/gemini-watermark-remover-cli/issues"
+  },
   "bin": {
     "gemini-watermark": "./src/cli.js",
     "gwr": "./src/cli.js"
