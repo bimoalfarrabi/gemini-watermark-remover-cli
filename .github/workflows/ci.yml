@@ -84,8 +84,37 @@ jobs:
           bun-version: latest
       - run: npm ci
       - run: node scripts/build-binaries.mjs
+
+      - name: Smoke the linux binary
+        run: |
+          chmod +x release/gwr-linux-x64
+          ./release/gwr-linux-x64 --version
+          ./release/gwr-linux-x64 test/fixtures/sample-1k.png -o "$RUNNER_TEMP/linux-out.png"
+          test -s "$RUNNER_TEMP/linux-out.png"
+
       - uses: actions/upload-artifact@v4
         with:
           name: standalone-binaries
           path: release/gwr-*
           if-no-files-found: error
+
+  windows-binary:
+    name: standalone binary (windows, real run)
+    runs-on: windows-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: npm ci
+      - run: bun build --compile --target=bun-windows-x64 --outfile=release/gwr-windows-x64.exe src/cli.js
+      # Running it on Windows is the only proof the exe works; the linux job
+      # can only cross-compile it.
+      - name: Run the executable
+        shell: pwsh
+        run: |
+          ./release/gwr-windows-x64.exe --version
+          ./release/gwr-windows-x64.exe test/fixtures/sample-1k.png -o out.png
+          if (-not (Test-Path out.png)) { throw "no output written" }
+          if ((Get-Item out.png).Length -lt 1000) { throw "output too small" }
