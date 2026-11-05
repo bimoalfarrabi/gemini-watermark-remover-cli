@@ -38,7 +38,7 @@
   },
   "scripts": {
     "start": "node ./src/cli.js",
-    "test": "node --test test/**/*.test.js",
+    "test": "node scripts/run-tests.mjs",
     "build:binaries": "node ./scripts/build-binaries.mjs"
   },
   "dependencies": {

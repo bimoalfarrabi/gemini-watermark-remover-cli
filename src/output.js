@@ -3,6 +3,21 @@ import fs from 'node:fs';
 import { GwrError } from './errors.js';
 
 /**
+ * Canonical form used to compare two paths that should be considered the same
+ * file. Forward slashes so mixed Windows separators compare equal, no trailing
+ * separator, and lower-cased because Windows and macOS filesystems are
+ * case-insensitive by default. Exported so callers build their lookup sets with
+ * exactly the same rule.
+ * @param {string} target a file path, relative or absolute
+ * @returns {string}
+ */
+export function collisionKey(target) {
+  const absolute = path.resolve(target);
+  const slashed = absolute.split(path.sep).join('/');
+  return slashed.replace(/\/+$/, '').toLowerCase();
+}
+
+/**
  * Computes the output path for one input. Synchronous and pure: it never
  * touches the filesystem. Collision detection is opt-in via
  * `options.exists` — a Set of normalized existing paths the caller supplies
@@ -40,10 +55,13 @@ export function planOutput(inputPath, options = {}) {
     target = path.join(path.dirname(inputPath), name + effectiveSuffix + ext);
   }
 
-  // exists is a caller-provided Set of normalized paths; comparing raw strings
-  // would miss case/slash differences on Windows, hence normalize both sides.
-  const norm = (p) => path.normalize(p).toLowerCase();
-  const overwriteExisting = exists instanceof Set && exists.has(norm(target));
+  // exists is a caller-provided Set of normalized paths. Comparing raw strings
+  // misses case differences (Windows), separator differences (a relative input
+  // yields "photo-clean.png" while the caller probed an absolute path), and
+  // trailing-separator noise. Normalize the same way on both sides.
+  const key = collisionKey;
+
+  const overwriteExisting = exists instanceof Set && (exists.has(key(target)) || exists.has(key(path.resolve(target))));
   let skip = false;
   let reason = null;
   if (!overwrite && overwriteExisting) {

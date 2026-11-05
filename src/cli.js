@@ -13,7 +13,7 @@ import { parseArgs, usageText } from './args.js';
 import { loadConfig, saveConfig, resetConfig, configPath, getConfigValue, setConfigValue, KNOWN_KEYS } from './config.js';
 import { GwrError, toGwrError } from './errors.js';
 import { expandInputs, processBatch } from './pipeline.js';
-import { planOutput, describePlan } from './output.js';
+import { planOutput, describePlan, collisionKey } from './output.js';
 import { describeCodec } from './codec.js';
 import { videoAvailable } from './video.js';
 import * as ui from './ui.js';
@@ -229,7 +229,7 @@ async function collectExisting(inputs, options) {
     for (const input of inputs) {
         const plan = planOutput(input, { ...options, exists: null });
         if (await pathExists(plan.output)) {
-            taken.add(path.normalize(path.resolve(plan.output)).toLowerCase());
+            taken.add(collisionKey(plan.output));
         }
     }
     return taken;
