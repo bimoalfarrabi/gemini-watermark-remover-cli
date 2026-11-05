@@ -1,0 +1,6 @@
+test/
+scripts/
+.github/
+CONTRACT.md
+release/
+*.log

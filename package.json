@@ -1,0 +1,46 @@
+{
+  "name": "gemini-watermark-remover-cli",
+  "version": "0.1.0",
+  "description": "Friendly cross-platform CLI to remove Gemini watermarks from images",
+  "type": "module",
+  "license": "MIT",
+  "keywords": [
+    "gemini",
+    "watermark",
+    "watermark-remover",
+    "image",
+    "cli",
+    "nano-banana",
+    "ai-image"
+  ],
+  "bin": {
+    "gemini-watermark": "./src/cli.js",
+    "gwr": "./src/cli.js"
+  },
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "files": [
+    "src/",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node ./src/cli.js",
+    "test": "node --test test/**/*.test.js",
+    "build:binaries": "node ./scripts/build-binaries.mjs"
+  },
+  "dependencies": {
+    "@clack/prompts": "^1.8.1",
+    "@pilio/gemini-watermark-remover": "^1.0.46",
+    "fast-png": "^8.0.0",
+    "jpeg-js": "^0.4.4",
+    "picocolors": "^1.1.1"
+  },
+  "optionalDependencies": {
+    "sharp": "^0.34.5"
+  }
+}

@@ -1,0 +1,96 @@
+name: release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: Build everything, publish nothing
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: node scripts/prepublish-check.mjs
+
+  binaries:
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: npm ci
+      - run: node scripts/build-binaries.mjs
+      - name: Smoke the linux binary
+        run: |
+          chmod +x release/gwr-linux-x64
+          ./release/gwr-linux-x64 --version
+          ./release/gwr-linux-x64 test/fixtures/sample-1k.png -o "$RUNNER_TEMP/bin-out.png"
+          test -s "$RUNNER_TEMP/bin-out.png"
+      - name: Checksums
+        run: |
+          cd release
+          for f in gwr-*; do sha256sum "$f" >> SHA256SUMS.txt; done
+          cat SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-binaries
+          path: |
+            release/gwr-*
+            release/SHA256SUMS.txt
+          if-no-files-found: error
+
+  publish:
+    needs: [verify, binaries]
+    if: github.event_name == 'push' || inputs.dry-run == false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          registry-url: https://registry.npmjs.org
+      - run: npm ci
+      - name: Check tag matches package version
+        shell: bash
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          pkg="$(node -p "require('./package.json').version")"
+          if [ "$tag" != "$pkg" ]; then
+            echo "tag $tag does not match package.json $pkg" >&2
+            exit 1
+          fi
+      - run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-binaries
+          path: release
+      - name: GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release/gwr-*
+            release/SHA256SUMS.txt
+          generate_release_notes: true
