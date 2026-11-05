@@ -63,8 +63,11 @@ jobs:
           # The dependency ships its own `gwr` bin, so only the unambiguous
           # name is ours. Asserting `gwr` here would silently test upstream.
           ./node_modules/.bin/gemini-watermark --version
-          test ! -e ./node_modules/.bin/gemini-watermark.bak
-          ./node_modules/.bin/gemini-watermark --help | grep -q "gemini watermark"
+          ./node_modules/.bin/gemini-watermark --help | grep -q "remove Gemini watermarks"
+          # And it must actually process an image when installed this way.
+          cp "$GITHUB_WORKSPACE/test/fixtures/sample-1k.png" in.png
+          ./node_modules/.bin/gemini-watermark in.png
+          test -s in-clean.png
 
   binaries:
     name: standalone binaries
