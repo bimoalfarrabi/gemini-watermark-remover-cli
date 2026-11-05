@@ -252,14 +252,23 @@ export function renderSummary(results, { quiet, json, dryRun } = {}) {
   const totalMs = results.reduce((sum, r) => sum + (r.durationMs || 0), 0);
   out(`${processed} processed, ${skipped} skipped, ${failed} failed (${fmtDuration(totalMs)})`);
 
-  // Hints are diagnostics, so they go to stderr: stdout stays a clean report
-  // that can be piped or captured while the advice remains visible.
-  const hints = [...new Set(
-    results
-      .filter((r) => !r.ok && r.error && r.error.hint)
-      .map((r) => r.error.hint)
-  )];
-  for (const hint of hints) process.stderr.write(col.dim(`  ${hint}`) + '\n');
+  // Failures must explain themselves on stderr; without this a per-file error
+  // produced a "1 failed" count and nothing else. Unique, ordered by first
+  // appearance, prefixed with the file so a batch stays readable.
+  const explained = new Set();
+  for (const result of results) {
+    if (result.ok || !result.error) continue;
+    if (result.error.code === 'E_OUTPUT_EXISTS') continue; // reported as "skip"
+    const line = `${result.input || result.output || '?'}: ${result.error.message}`;
+    if (explained.has(line)) continue;
+    explained.add(line);
+    process.stderr.write(col.red('error:') + ' ' + line + '\n');
+    if (result.error.hint) process.stderr.write(col.dim(`  ${result.error.hint}`) + '\n');
+  }
+
+  // Skips share one actionable hint rather than repeating it per row.
+  const skipHint = results.find((r) => !r.ok && r.error && r.error.code === 'E_OUTPUT_EXISTS' && r.error.hint);
+  if (skipHint) process.stderr.write(col.dim(`  ${skipHint.error.hint}`) + '\n');
 }
 
 /**
