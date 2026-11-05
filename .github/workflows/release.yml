@@ -59,9 +59,9 @@ jobs:
             release/SHA256SUMS.txt
           if-no-files-found: error
 
-  publish:
+  release:
     needs: [verify, binaries]
-    if: github.event_name == 'push' || inputs.dry-run == false
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -69,7 +69,6 @@ jobs:
         with:
           node-version: '22'
           cache: npm
-          registry-url: https://registry.npmjs.org
       - run: npm ci
       - name: Check tag matches package version
         shell: bash
@@ -80,9 +79,6 @@ jobs:
             echo "tag $tag does not match package.json $pkg" >&2
             exit 1
           fi
-      - run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - uses: actions/download-artifact@v4
         with:
           name: release-binaries
@@ -94,3 +90,46 @@ jobs:
             release/gwr-*
             release/SHA256SUMS.txt
           generate_release_notes: true
+          body: |
+            Standalone binaries — no Node.js or npm required.
+
+            | Platform | File |
+            | --- | --- |
+            | Linux x64 | `gwr-linux-x64` |
+            | Linux arm64 | `gwr-linux-arm64` |
+            | macOS x64 | `gwr-macos-x64` |
+            | macOS arm64 | `gwr-macos-arm64` |
+            | Windows x64 | `gwr-windows-x64.exe` |
+
+            ```bash
+            chmod +x gwr-linux-x64
+            ./gwr-linux-x64 photo.png        # writes photo-clean.png
+            ```
+
+            Verify a download against `SHA256SUMS.txt`.
+
+            Or install from source:
+
+            ```bash
+            git clone https://github.com/bimoalfarrabi/gemini-watermark-remover-cli
+            cd gemini-watermark-remover-cli && npm install
+            node src/cli.js photo.png
+            ```
+
+  npm:
+    # Opt-in: publishing requires an NPM_TOKEN secret. Kept separate so a
+    # missing token can never block the GitHub release.
+    needs: [verify]
+    if: github.event_name == 'push' && vars.PUBLISH_NPM == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          registry-url: https://registry.npmjs.org
+      - run: npm ci
+      - run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

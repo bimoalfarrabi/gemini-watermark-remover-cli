@@ -8,7 +8,8 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, existsSync, rmSync, copyFileSync, chmodSync } from 'node:fs';
+import { mkdirSync, existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -37,7 +38,7 @@ export function build({ only = null } = {}) {
     if (!bunAvailable()) {
         throw new Error('bun is required to build standalone binaries: https://bun.sh');
     }
-    if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
+    mkdirSync(outDir, { recursive: true });
 
     const built = [];
     for (const target of targets) {
@@ -51,14 +52,32 @@ export function build({ only = null } = {}) {
             '--compile',
             `--target=${target.bunTarget}`,
             '--minify',
-            '--sourcemap=none',
             `--outfile=${outfile}`,
             entry
         ], { stdio: 'inherit', cwd: root });
         built.push(target);
         console.log(`built ${target.out}`);
     }
+    writeChecksums(outDir);
     return built;
+}
+
+/**
+ * Writes SHA256SUMS.txt for the binaries that exist. Done here rather than in
+ * shell so the same manifest is produced locally and in CI, and so a stray
+ * non-binary file in release/ never ends up in the manifest.
+ */
+export function writeChecksums(dir = outDir) {
+    const files = readdirSync(dir).filter((name) => targets.some((t) => t.out === name)).sort();
+    const lines = files.map((name) => {
+        const hash = createHash('sha256').update(readFileSync(path.join(dir, name))).digest('hex');
+        return `${hash}  ${name}`;
+    });
+    if (lines.length > 0) {
+        writeFileSync(path.join(dir, 'SHA256SUMS.txt'), lines.join('\n') + '\n');
+        console.log(`wrote SHA256SUMS.txt for ${lines.length} binaries`);
+    }
+    return lines;
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

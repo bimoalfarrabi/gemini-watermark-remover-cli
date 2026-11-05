@@ -36,6 +36,19 @@ Prebuilt standalone binaries (no Node.js required) are attached to each
 release: `gwr-linux-x64`, `gwr-linux-arm64`, `gwr-macos-x64`,
 `gwr-macos-arm64`, `gwr-windows-x64.exe`.
 
+```bash
+# Linux / macOS
+chmod +x gwr-linux-x64
+./gwr-linux-x64 photo.png
+```
+
+```powershell
+# Windows
+.\gwr-windows-x64.exe photo.png
+```
+
+Each release ships `SHA256SUMS.txt` alongside the binaries.
+
 ## Use
 
 ```bash
